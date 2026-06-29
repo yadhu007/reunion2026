@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>College Reunion Registration Portal</title>
+ <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+ <style>
+   body {
+     background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)),
+                 url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+     background-size: cover;
+   }
+   .step-disabled {
+     opacity: 0.35;
+     pointer-events: none;
+   }
+ </style>
+</head>
+<body class="min-h-screen text-slate-100 font-sans p-3 md:p-6 flex items-center justify-center">
+
+ <!-- SMOOTH ON-SCREEN OVERLAY TEXT NOTIFICATION BANNER -->
+ <div id="toast-notification" class="hidden fixed top-6 right-6 bg-emerald-500 text-slate-950 font-bold text-xs px-5 py-3 rounded-xl shadow-2xl border border-emerald-400/30 z-50 transition-all duration-300 transform translate-y-[-15px] opacity-0">
+   <span id="toast-message">Profile updated</span>
+ </div>
+
+ <div class="max-w-6xl w-full bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-700/80 overflow-hidden flex flex-col md:flex-row">
+  
+   <!-- LEFT SIDEBAR COLUMN: CONTAINS PROGRESS AND LIVE VIEWS TOGETHER -->
+   <div class="w-full md:w-80 bg-slate-950/70 p-5 border-b md:border-b-0 md:border-r border-slate-700 flex flex-col gap-5 justify-between shrink-0">
+     <div class="space-y-5">
+       <div>
+         <h1 class="text-xl font-bold text-amber-400">RECT92 Reunion 2026</h1>
+         <p class="text-[11px] text-slate-400">Inmate Tracking System</p>
+       </div>
+      
+       <!-- Progress Steps Tracker Node System -->
+       <div class="space-y-3 bg-slate-900/40 p-3 rounded-xl border border-slate-800">
+         <h4 class="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Your Progress</h4>
+         <div id="track-step1" class="flex items-center gap-2 text-xs font-medium text-slate-500">
+           <span class="w-5 h-5 rounded-full bg-slate-800 text-[10px] flex items-center justify-center border border-slate-700 font-bold">1</span>
+           <span>Profile</span>
+         </div>
+         <div id="track-step2" class="flex items-center gap-2 text-xs font-medium text-slate-500">
+           <span class="w-5 h-5 rounded-full bg-slate-800 text-[10px] flex items-center justify-center border border-slate-700 font-bold">2</span>
+           <span>Fees Paid</span>
+         </div>
+         <div id="track-step3" class="flex items-center gap-2 text-xs font-medium text-slate-500">
+           <span class="w-5 h-5 rounded-full bg-slate-800 text-[10px] flex items-center justify-center border border-slate-700 font-bold">3</span>
+           <span>Room Match</span>
+         </div>
+         <div id="track-step4" class="flex items-center gap-2 text-xs font-medium text-slate-500">
+           <span class="w-5 h-5 rounded-full bg-slate-800 text-[10px] flex items-center justify-center border border-slate-700 font-bold">4</span>
+           <span>Booked Resort</span>
+         </div>
+       </div>
+
+       <!-- Live Selection Panel - Closely Stacked underneath Progress Bar -->
+       <div id="persistent-summary" class="hidden bg-slate-900/90 p-4 rounded-xl border border-amber-500/20 space-y-2 text-xs shadow-inner">
+         <h3 class="text-amber-400 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-700 pb-1 mb-2">Status</h3>
+         <p class="truncate"><span class="text-slate-400">Name:</span> <span id="sum-name" class="font-medium text-slate-200">-</span></p>
+         <p class="truncate"><span class="text-slate-400">Roomie:</span> <span id="sum-roommate" class="font-medium text-amber-300">-</span></p>
+         <p><span class="text-slate-400">Incidentals:</span> <span id="sum-paid" class="font-bold">-</span></p>
+         <p><span class="text-slate-400">Room Status:</span> <span id="sum-booked" class="font-bold text-amber-400">-</span></p>
+       </div>
+     </div>
+
+     <!-- Account Deletion Action Pin Anchor -->
+     <div id="danger-zone" class="hidden border-t border-slate-800 pt-3">
+       <button onclick="triggerAccountPurge()" class="w-full bg-red-950/40 hover:bg-red-900/30 text-red-400 border border-red-900/60 text-[11px] py-1.5 rounded transition-all cursor-pointer">
+         🗑️ Delete Registration Profile
+       </button>
+     </div>
+   </div>
+
+   <!-- RIGHT CONTENT WORKING REGION -->
+   <div class="flex-1 p-5 md:p-8">
+    
+     <!-- Entry Portal Panel -->
+     <div id="login-section" class="max-w-md mx-auto my-8 space-y-4 bg-slate-950/40 p-6 rounded-xl border border-slate-800">
+       <h2 class="text-lg font-bold text-slate-100">Welcome !</h2>
+       <p class="text-xs text-slate-400 leading-relaxed">Enter your email. If this is your first time checking in, a profile will be for you.</p>
+       <div class="flex flex-col gap-2 pt-1">
+         <input type="email" id="login-email" placeholder="samfox@rect.edu" class="bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-amber-400">
+         <button onclick="handleLogin()" id="btn-login" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm py-2 rounded-lg transition-colors cursor-pointer">Enter</button>
+       </div>
+       <p id="login-error" class="text-red-400 text-xs hidden text-center"></p>
+     </div>
+
+     <!-- Main Interactive Panel Steps Workspace -->
+     <div id="main-app" class="hidden space-y-5">
+      
+       <!-- STEP 1 -->
+       <section id="panel-step1" class="space-y-3 bg-slate-800/30 p-4 rounded-xl border border-slate-700/50">
+         <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider">Step 1: Your details</h2>
+         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+           <div>
+             <label class="block text-[10px] font-semibold text-slate-400 mb-1">Full Name</label>
+             <input type="text" id="p-name" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-amber-400">
+           </div>
+           <div>
+             <label class="block text-[10px] font-semibold text-slate-400 mb-1">Mobile Phone</label>
+             <input type="tel" id="p-phone" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-amber-400">
+           </div>
+         </div>
+         <button onclick="updateProfile()" class="bg-slate-700 hover:bg-slate-600 text-white font-medium text-[11px] px-3 py-1.5 rounded transition-all cursor-pointer">Save Information</button>
+       </section>
+
+       <!-- STEP 2 -->
+       <section id="panel-step2" class="space-y-2 bg-slate-800/30 p-4 rounded-xl border border-slate-700/50">
+         <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider">Step 2: Incidental Fees</h2>
+         <p class="text-xs text-slate-200 leading-relaxed">Shuttle, Food, Hall rental etc. </p>
+         <p class="text-xs text-slate-300 leading-relaxed">Please Pay incidental fees of <strong class="text-amber-300">$150</strong> via one of these options </p>
+         
+         <p style="color: cyan;"> PayPal: email@id.com <br>
+         Venmo: @YadhuGov <br>
+         Zelle: Chida@denver.com <br> </p> 
+        <p class="text-xs text-slate-300 leading-relaxed">After doing so, check the confirmation box below and proceed to step 3 to select your roommate. If you dont see your roommate, nudge them to register here and make the incidentals payment. :P </p>
+
+         <div class="flex items-center gap-3 bg-slate-950/50 p-2.5 rounded border border-slate-800 mt-1">
+           <input type="checkbox" id="check-paid" onchange="togglePaymentConfirmation()" class="w-4 h-4 accent-amber-400 cursor-pointer">
+           <label for="check-paid" class="text-xs text-slate-200 cursor-pointer font-medium">I have paid my $150 incidentals fee via PayPal/Venmo/Zelle</label>
+         </div>
+       </section>
+
+       <!-- STEP 3 -->
+       <section id="panel-step3" class="space-y-3 bg-slate-800/30 p-4 rounded-xl border border-slate-700/50 step-disabled">
+         <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider">Step 3: Roommate selection</h2>
+         <p class="text-xs text-slate-400">Select an unpaired attendee to be your roommate.</p>
+        
+         <div id="roomie-selection-zone" class="flex flex-col sm:flex-row gap-2">
+           <select id="roomie-dropdown" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-amber-400 flex-1">
+             <!-- Content Added Automatically -->
+           </select>
+           <button id="btn-pair" onclick="confirmRoomiePairing()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-4 py-1.5 rounded-lg transition-all cursor-pointer">Confirm Partner</button>
+         </div>
+
+         <div id="roomie-empty-notice" class="hidden text-xs bg-blue-950/40 border border-blue-900/60 text-blue-300 p-2.5 rounded">
+           No unpaired roommates are available right now. Please return later, or notify organizers if you wish to book the whole room independently. Ask your preferred room mate to register and make the incidental payment so you can add them to your room.
+         </div>
+
+         <div class="bg-slate-950/50 p-3 rounded-lg border border-slate-800 text-xs space-y-1">
+           <p class="text-slate-400">The richer roommate now can go to the below url and book a room for both. <br>
+           <a href="https://www.denverresort.com" target="_blank" class="text-amber-400 underline font-semibold">www.denverresort.com</a> <br> Use group code:</p>
+           <p class="text-sm text-center font-mono tracking-widest text-amber-300 font-bold bg-slate-900 p-1 rounded mt-1">SAMFOX007</p>
+         </div>
+       </section>
+
+       <!-- STEP 4 -->
+       <section id="panel-step4" class="space-y-2 bg-slate-800/30 p-4 rounded-xl border border-slate-700/50 step-disabled">
+         <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider">Step 4: Resort Confirmation</h2>
+         <div class="flex items-center gap-3 bg-slate-950/50 p-2.5 rounded border border-slate-800">
+           <input type="checkbox" id="check-booked" onchange="submitBookingConfirmation()" class="w-4 h-4 accent-amber-400 cursor-pointer">
+           <label for="check-booked" class="text-xs text-slate-200 cursor-pointer font-medium">I confirm that a room has been successfully booked at the Resort for me and my roomie</label>
+         </div>
+       </section>
+
+       <!-- FLIGHT TRACKER MODULAR GRID -->
+       <section class="space-y-2 bg-slate-800/30 p-4 rounded-xl border border-slate-700/50">
+         <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider">Flight Tracking & Coordination</h2>
+         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+           <div>
+             <label class="block text-[9px] font-semibold text-slate-400 mb-1">Arrival Date</label>
+             <input type="date" id="f-arr-date" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-1 text-[11px] text-slate-100">
+           </div>
+           <div>
+             <label class="block text-[9px] font-semibold text-slate-400 mb-1">Arrival Time</label>
+             <input type="time" id="f-arr-time" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-1 text-[11px] text-slate-100">
+           </div>
+           <div class="col-span-2 sm:col-span-2">
+             <label class="block text-[9px] font-semibold text-slate-400 mb-1">Arrival Flight #</label>
+             <input type="text" id="f-arr-flight" placeholder="AA1234" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-1 text-[11px] text-slate-100 uppercase">
+           </div>
+
+           <div>
+             <label class="block text-[9px] font-semibold text-slate-400 mb-1">Departure Date</label>
+             <input type="date" id="f-dep-date" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-1 text-[11px] text-slate-100">
+           </div>
+           <div>
+             <label class="block text-[9px] font-semibold text-slate-400 mb-1">Departure Time</label>
+             <input type="time" id="f-dep-time" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-1 text-[11px] text-slate-100">
+           </div>
+           <div class="col-span-2 sm:col-span-2">
+             <label class="block text-[9px] font-semibold text-slate-400 mb-1">Departure Flight #</label>
+             <input type="text" id="f-dep-flight" placeholder="UA567" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-1 text-[11px] text-slate-100 uppercase">
+            </div>
+         </div>
+         <button onclick="updateProfile()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-[10px] px-3 py-1.5 rounded transition-colors mt-1 cursor-pointer">Save Flight Details</button>
+       </section>
+
+     </div>
+   </div>
+ </div>
+
+ <script>
+   let activeUser = null;
+
+   // Toast Manager Replacement for standard window alerts
+   function showToast(message, isError = false) {
+     const toast = document.getElementById('toast-notification');
+     const toastText = document.getElementById('toast-message');
+    
+     toastText.innerText = message;
+     if (isError) {
+       toast.className = toast.className.replace('bg-emerald-500 text-slate-950 border-emerald-400/30', 'bg-red-500 text-white border-red-400/30');
+     } else {
+       toast.className = toast.className.replace('bg-red-500 text-white border-red-400/30', 'bg-emerald-500 text-slate-950 border-emerald-400/30');
+     }
+    
+     toast.classList.remove('hidden');
+     setTimeout(() => {
+       toast.classList.remove('translate-y-[-15px]', 'opacity-0');
+     }, 10);
+    
+     setTimeout(() => {
+       toast.classList.add('translate-y-[-15px]', 'opacity-0');
+       setTimeout(() => {
+         toast.classList.add('hidden');
+       }, 300);
+     }, 3000);
+   }
+
+   function handleLogin() {
+     const email = document.getElementById('login-email').value.trim();
+     const btn = document.getElementById('btn-login');
+     const errorEl = document.getElementById('login-error');
+     if(!email) return;
+     btn.innerText = "Verifying Account...";
+     errorEl.classList.add('hidden');
+
+     google.script.run
+       .withSuccessHandler(function(profile) {
+         activeUser = profile;
+         document.getElementById('login-section').classList.add('hidden');
+         document.getElementById('main-app').classList.remove('hidden');
+         document.getElementById('persistent-summary').classList.remove('hidden');
+         document.getElementById('danger-zone').classList.remove('hidden');
+         populateUIFields();
+         btn.innerText = "Verify Email & Enter";
+       })
+       .withFailureHandler(function(err) {
+         errorEl.innerText = "Error encountered: " + err.message;
+         errorEl.classList.remove('hidden');
+         btn.innerText = "Verify Email & Enter";
+       })
+       .getAttendeeProfile(email);
+   }
+
+   function populateUIFields() {
+     if(!activeUser) return;
+    
+     document.getElementById('p-name').value = activeUser.name || '';
+     document.getElementById('p-phone').value = activeUser.phone || '';
+     document.getElementById('f-arr-date').value = activeUser.arrivalDate;
+     document.getElementById('f-arr-time').value = activeUser.arrivalTime || '';
+     document.getElementById('f-dep-date').value = activeUser.departureDate;
+     document.getElementById('f-dep-time').value = activeUser.departureTime || '';
+     document.getElementById('f-arr-flight').value = activeUser.arrivalFlight || '';
+     document.getElementById('f-dep-flight').value = activeUser.departureFlight || '';
+
+     document.getElementById('check-paid').checked = activeUser.paid;
+     document.getElementById('check-booked').checked = activeUser.booked;
+
+     if (activeUser.paid) document.getElementById('check-paid').disabled = true;
+     if (activeUser.booked) document.getElementById('check-booked').disabled = true;
+
+     document.getElementById('sum-name').innerText = activeUser.name || '(Incomplete)';
+     document.getElementById('sum-roommate').innerText = activeUser.roommate;
+     document.getElementById('sum-paid').innerText = activeUser.paid ? "PAID" : "UNPAID";
+     document.getElementById('sum-paid').className = activeUser.paid ? "font-bold text-emerald-400" : "font-bold text-red-400";
+    
+     document.getElementById('sum-booked').innerText = activeUser.booked ? "ROOM SECURED" : "PENDING BOOKING";
+     document.getElementById('sum-booked').className = activeUser.booked ? "font-bold text-emerald-400" : "font-bold text-amber-500";
+
+     updateVisualTrackerBadges();
+    
+     if (activeUser.paid) {
+       document.getElementById('panel-step3').classList.remove('step-disabled');
+       if(activeUser.roommate === "Unpaired") {
+         loadAvailableRoommatesList();
+       } else {
+         document.getElementById('roomie-selection-zone').innerHTML = `<p class="text-xs font-semibold text-emerald-400 flex items-center gap-1">🎉 Paired with: ${activeUser.roommate}</p>`;
+         document.getElementById('roomie-empty-notice').classList.add('hidden');
+         document.getElementById('panel-step4').classList.remove('step-disabled');
+       }
+     }
+   }
+
+   function updateVisualTrackerBadges() {
+     updateNodeStyle('track-step1', activeUser.name ? 'complete' : 'active');
+     updateNodeStyle('track-step2', activeUser.paid ? 'complete' : (activeUser.name ? 'active' : 'pending'));
+     updateNodeStyle('track-step3', activeUser.roommate !== 'Unpaired' ? 'complete' : (activeUser.paid ? 'active' : 'pending'));
+     updateNodeStyle('track-step4', activeUser.booked ? 'complete' : (activeUser.roommate !== 'Unpaired' ? 'active' : 'pending'));
+   }
+
+   function updateNodeStyle(elementId, state) {
+     const node = document.getElementById(elementId);
+     const span = node.querySelector('span');
+     if(state === 'complete') {
+       node.className = "flex items-center gap-2 text-xs font-medium text-emerald-400";
+       span.className = "w-5 h-5 rounded-full text-[10px] flex items-center justify-center border font-bold bg-emerald-500/20 border-emerald-500 text-emerald-400";
+       span.innerText = "✓";
+     } else if (state === 'active') {
+       node.className = "flex items-center gap-2 text-xs font-medium text-amber-400 animate-pulse";
+       span.className = "w-5 h-5 rounded-full text-[10px] flex items-center justify-center border font-bold bg-amber-500/20 border-amber-400 text-amber-400";
+     } else {
+       node.className = "flex items-center gap-2 text-xs font-medium text-slate-500 step-disabled";
+       span.className = "w-5 h-5 rounded-full text-[10px] flex items-center justify-center border font-bold bg-slate-800 border-slate-700 text-slate-600";
+     }
+   }
+
+   function updateProfile() {
+     if(!activeUser) return;
+     const updatedData = {
+       email: activeUser.email,
+       name: document.getElementById('p-name').value.trim(),
+       phone: document.getElementById('p-phone').value.trim(),
+       arrivalDate: document.getElementById('f-arr-date').value,
+       arrivalTime: document.getElementById('f-arr-time').value,
+       departureDate: document.getElementById('f-dep-date').value,
+       departureTime: document.getElementById('f-dep-time').value,
+       arrivalFlight: document.getElementById('f-arr-flight').value.trim(),
+       departureFlight: document.getElementById('f-dep-flight').value.trim()
+     };
+     google.script.run
+       .withSuccessHandler(function(newProfile) {
+         activeUser = newProfile;
+         populateUIFields();
+         showToast("Profile updated");
+       })
+       .saveProfile(updatedData);
+   }
+
+   function togglePaymentConfirmation() {
+     if(!activeUser || !document.getElementById('check-paid').checked) return;
+     google.script.run
+       .withSuccessHandler(function(newProfile) {
+         activeUser = newProfile;
+         populateUIFields();
+         showToast("Payment done!");
+       })
+       .confirmPayment(activeUser.email);
+   }
+
+   function loadAvailableRoommatesList() {
+     google.script.run
+       .withSuccessHandler(function(list) {
+         const select = document.getElementById('roomie-dropdown');
+         select.innerHTML = '';
+         if(list.length === 0) {
+           document.getElementById('roomie-selection-zone').classList.add('hidden');
+           document.getElementById('roomie-empty-notice').classList.remove('hidden');
+         } else {
+           document.getElementById('roomie-selection-zone').classList.remove('hidden');
+           document.getElementById('roomie-empty-notice').classList.add('hidden');
+           select.options[select.options.length] = new Option("-- Select Unpaired Classmate --", "");
+           list.forEach(item => {
+             select.options[select.options.length] = new Option(`${item.name} (${item.email})`, item.email);
+           });
+         }
+       })
+       .getUnpairedRoommates(activeUser.email);
+   }
+
+let pairConfirmedOnce = false;
+
+function confirmRoomiePairing() {
+ const selectedEmail = document.getElementById('roomie-dropdown').value;
+ const btn = document.getElementById('btn-pair');
+  if(!selectedEmail) {
+   showToast("Select a classmate first", true);
+   return;
+ }
+  // First click: Ask them to confirm on-button
+ if (!pairConfirmedOnce) {
+   pairConfirmedOnce = true;
+   btn.innerText = "Are you sure? Click again to lock!";
+   btn.className = btn.className.replace('bg-amber-500 hover:bg-amber-600', 'bg-orange-500 hover:bg-orange-600 animate-pulse');
+  
+   // Reset button back to normal if they don't click again within 4 seconds
+   setTimeout(() => {
+     pairConfirmedOnce = false;
+     btn.innerText = "Confirm Partner";
+     btn.className = btn.className.replace('bg-orange-500 hover:bg-orange-600 animate-pulse', 'bg-amber-500 hover:bg-amber-600');
+   }, 4000);
+   return;
+ }
+
+ // Second click: Securely run the backend script
+ btn.innerText = "Locking match...";
+ btn.disabled = true;
+
+ google.script.run
+   .withSuccessHandler(function(newProfile) {
+     activeUser = newProfile;
+     pairConfirmedOnce = false; // Reset state tracking
+     populateUIFields();
+     showToast("Roommate match secured!");
+   })
+   .withFailureHandler(function(err) {
+     pairConfirmedOnce = false;
+     btn.disabled = false;
+     btn.innerText = "Confirm Partner";
+     btn.className = btn.className.replace('bg-orange-500 hover:bg-orange-600 animate-pulse', 'bg-amber-500 hover:bg-amber-600');
+     showToast(err.message, true);
+     loadAvailableRoommatesList();
+   })
+   .pairRoommates(activeUser.email, selectedEmail);
+}
+
+   function submitBookingConfirmation() {
+     if(!activeUser || !document.getElementById('check-booked').checked) return;
+     google.script.run
+       .withSuccessHandler(function(newProfile) {
+         activeUser = newProfile;
+         populateUIFields();
+         showToast("Resort booking confirmed!");
+       })
+       .confirmBooking(activeUser.email);
+   }
+
+let deleteConfirmedOnce = false;
+
+function triggerAccountPurge() {
+ if(!activeUser) return;
+ const btn = document.querySelector('#danger-zone button');
+  if (!deleteConfirmedOnce) {
+   deleteConfirmedOnce = true;
+   btn.innerText = "⚠️ Confirm Permanent Wipe? Click again!";
+   btn.className = btn.className.replace('bg-red-950/40 text-red-400 border-red-900/60', 'bg-red-600 text-white font-bold border-red-500 animate-bounce');
+  
+   setTimeout(() => {
+     deleteConfirmedOnce = false;
+     btn.innerText = "🗑️ Delete Registration Profile";
+     btn.className = btn.className.replace('bg-red-600 text-white font-bold border-red-500 animate-bounce', 'bg-red-950/40 text-red-400 border-red-900/60');
+   }, 4000);
+   return;
+ }
+
+ btn.innerText = "Purging row...";
+ btn.disabled = true;
+
+ google.script.run
+   .withSuccessHandler(function() {
+     showToast("Account deleted. Redirecting...");
+     setTimeout(() => { window.location.reload(); }, 1500);
+   })
+   .withFailureHandler(function(err) {
+     deleteConfirmedOnce = false;
+     btn.disabled = false;
+     btn.innerText = "🗑️ Delete Registration Profile";
+     showToast("Error: " + err.message, true);
+   })
+   .deleteProfile(activeUser.email);
+}
+ </script>
+</body>
+</html>
+
